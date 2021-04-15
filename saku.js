@@ -31,7 +31,7 @@ var questions = [
 ];
 
 inquirer.prompt(questions).then(res => {
-  MEMBER_NUM = +res.num;
+  MEMBER_NUM = res.num;
   page = +res.page - 1;
   endPage = +res.endPage - 1;
   // console.log(res);
@@ -55,23 +55,22 @@ inquirer.prompt(questions).then(res => {
         axios.get(link).then(res => {
           const dom = new jsdom.JSDOM(res.data);
           const document = dom.window.document;
-          const title = document.querySelector("h1").textContent;
+          const name = document.querySelector('.com-hero-title').textContent.split(' 公')[0]
+          const title = document.querySelector(".title-wrap");
           const date = `${document.querySelector('.ym-year').textContent}-${document.querySelector('.ym-month').textContent}-${document.querySelector('.date').textContent}`;
-          const pic = [...document.querySelectorAll('.box-article img')].map(img => INDEX + img.src);
-          const content = document.querySelector('.box-article').textContent;
-          mkdirp(`${__dirname}/${date}_${title}`).then(made =>
-            console.log(`made directories successfully`)).then(() => {
+          const pic = [...document.querySelectorAll('.box-article img')].map(img => INDEX + img.src);         
+          const content = document.querySelector('.box-article');
+          const path = `${__dirname}/${name}/${date}`
+          mkdirp(path).then(made =>
+            console.log(`建立資料夾成功`)).then(() => {
               //download blog content
-              fs.writeFile(`${__dirname}/${date}_${title}/${title}.html`, content, function (err, result) {
+              fs.writeFile(`${path}/${title.textContent.slice(0,10)}.html`, title.innerHTML+'<br><br><br>'+content.innerHTML, function (err, result) {
                 if (err) console.log('error', err);
+                console.log('文章下載成功');
               });
               //download pics
               pic.forEach(item => {
-
-                const filePath = `${__dirname}/${date}_${title}`;
-
-                download(item, filePath)
-
+                download(item, path).then(() => console.log('我看者妳載照片 嘿嘿'))
               })
             });
         })
