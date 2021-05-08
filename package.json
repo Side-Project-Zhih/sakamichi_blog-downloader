@@ -5,7 +5,12 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js"
+    "start": "nodemon app.js",
+    "saku":"node saku.js",
+    "hina":"node hinata.js",
+    "nogi":"node nogi.js",
+    "keya":"node keya.js",
+    "cards":"node cards.js"
   },
   "author": "",
   "license": "ISC",
