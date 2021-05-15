@@ -1,13 +1,12 @@
 const fs = require("fs");
-const https = require("https");
+// const https = require("https");
 
-const mkdirp = require("mkdirp");
+// const mkdirp = require("mkdirp");
 const download = require("download");
 const axios = require("axios");
 const jsdom = require("jsdom");
-const inquirer = require("inquirer");
-const { dirname } = require("path");
-const totalPic = [];
+// const inquirer = require("inquirer");
+// const totalPic = [];
 // https://sakurazaka46.com/s/s46/contents/B202010_49?ima=4513&m=49
 
 const produceDoc = (body) => {
@@ -57,14 +56,15 @@ readFile("member.json")
         const { name, pics } = member;
         return Promise.all(
           pics.map((pic, i) => {
-            const path = `${__dirname}/賀卡`;
+            const path = `./賀卡`;
             return download(pic, path, { filename: `${name}(${i}).jpg` });
           })
         ).then(() => console.log(`${name} downloaded`));
       })
     );
   })
-  .then(() => console.log("finish"));
+  .then(() => console.log("finish"))
+  .catch((e) => console.log(e));
 
 //the other method
 
