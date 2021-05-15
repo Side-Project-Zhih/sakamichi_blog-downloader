@@ -1,17 +1,81 @@
-1. 下載 node.js 選擇 stable 版本
-2. 打開 cmd
-3. 輸入 "cd " 再把整個資料夾拉進 cmd 按 enter
-4. 輸入 "npm install" 安裝 modules
-5. 裝完後輸入 "node fileName.js" 就會執行
+# 坂道blog下載
+快速打包blog 含文章及圖片
+# 功能
+下載坂道系blog，可依  
+團體-成員  
+選取自訂頁碼下載blog
+會依照發布時間生成資料夾  
+放入文章(html)  
+(\*圖片連結官方若刪掉即消失)  
+及圖片
 
-== fileName===>為裡面 js 檔的檔名
-== 櫻坂賀卡可直接執行，輸入 " node 檔名.js " 執行
+# 使用
+## 直接使用exe file
 
-==乃木坂成員名字 請先到她部落格看她的網址內容
-ex http://blog.nogizaka46.com/seira.hayakawa/
-名字為 seira.hayakawa
+1. 進入對應團體資料夾，並依著執行環境則對應.exe執行
+ex :乃木坂  
++ nogizaka  
+ ---nogi-win.exe  
+ ---nogi-macos.exe  
+ ---nnogi-linux.exe  
+2. 櫻坂賀卡，進入cards資料夾並依著執行環境則對應.exe執行
++ cards  
+ ---cards-win.exe  
+ ---cards-macos.exe  
+ ---cards-linux.exe  
+### note
++ 乃木坂需輸入成員羅馬拼音，執行檔中有提示  
++ 櫻、櫸、日向坂需輸入成員編號，執行檔中有提示  
++ 部落格頁數為網站上的分頁
++ 頁數太多建議分頁下載
++ 若有成員有發新部落格，頁數都選 "1"即可，不會重複下載已下載過的blog
++ 櫻坂每月賀卡每月更新時，記得將資料夾改名，以免執行後遭到覆蓋
++ macos 需解決權限問題請自行google
 
-==櫸日櫻成員編號請看部落格址
-CT 的數值
-ex https://sakurazaka46.com/s/s46/diary/blog/list?ima=1028&ct=21
-CT 為 21
+## nodejs 中執行
+### 環境建置與需求
+    "node.js": "v10.15.0"
+    "axios": "^0.21.1"
+    "download": "^8.0.0"
+    "inquirer": "^8.0.0"
+    "jsdom": "^16.5.3"
+    "mkdirp": "^1.0.4"
+    "prompt": "^1.1.0"
+### 安裝與使用
+#### 下載專案
+git clone https://github.com/zhihdd/sakamichi_blog-downloader.git
+or
+右上方 "code" 下載
+
+#### 安裝套件
+```
+npm install
+```
+#### 使用 
+
+下載乃木坂blogs
+```
+npm run nogi 
+```
+下載櫸坂blogs
+```
+npm run keya 
+```
+下載櫻坂blogs
+```
+npm run saku 
+```
+下載日向坂blogs
+```
+npm run hinata 
+```
+下載櫻坂每月賀卡
+```
+npm run cards 
+```
+
+
+
+
+
+
