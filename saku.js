@@ -9,26 +9,19 @@ const inquirer = require("inquirer");
 const memberList = require("./sakuList.json");
 const dectectRepeat = require("./hepler/helper").dectectRepeat;
 
-let MEMBER_NUM;
-let page;
-let endPage;
 const INDEX = "https://sakurazaka46.com";
-const pageUrl = [];
-const timeout = (time) => {
-  return new Promise((res) => {
-    setTimeout(res, time);
-  });
-};
-
+const profile = {};
 console.log("--------------成員編號---------------");
 console.log("=====================================");
-memberList.forEach((member) => {
+
+memberList.forEach((member, i) => {
+  const key = Object.keys(member)[0];
+  profile[`${member[key]}`] = key;
   console.log(member);
 });
 console.log("===============================================");
 console.log("若成員編號為個位數請補上'0'  ex '03' 不要輸入 '3'");
 console.log("===============================================");
-
 var questions = [
   {
     type: "input",
@@ -47,101 +40,167 @@ var questions = [
   },
 ];
 
-
-inquirer.prompt(questions).then(async (res) => {
-  MEMBER_NUM = res.num;
-  page = +res.page - 1;
-  endPage = +res.endPage - 1;
-  for (let i = page; i <= endPage; ++i) {
-    pageUrl.push(
-      `https://sakurazaka46.com/s/s46/diary/blog/list?&page=${i}&cd=blog&ct=${MEMBER_NUM}`
-    );
+var another = [
+  {
+    type: "input",
+    name: "page",
+    message: "頁碼:",
+  },
+  {
+    type: "input",
+    name: "endPage",
+    message: "最後頁碼:",
+  },
+];
+// 輪流執行
+const mergePromise = async (arr) => {
+  for (let aj of arr) {
+    await aj();
   }
+  return "finished";
+};
+(async () => {
+  let page;
+  let endPage;
+  let setting = await fs.promises.readFile("./setting.json");
+  setting = JSON.parse(setting.toString());
+  const { isRenew, openMany } = setting;
+  let members = [];
+  if (isRenew) {
+    page = 1;
+    endPage = 1;
+    members = setting.sakuMember;
+    if (openMany) {
+      const res = await inquirer.prompt(another);
+      page = +res.page;
+      endPage = +res.endPage;
+    }
+  } else {
+    const res = await inquirer.prompt(questions);
+    page = +res.page;
+    endPage = +res.endPage;
+    members.push(res.num);
+  }
+  --page;
+  --endPage;
+  const downloadList = members.map((MEMBER_NUM) => {
+    return async () => {
+      const pageUrl = [];
 
-  let reqNum = 0;
-
-  let pageUrlLog = await Promise.all(
-    pageUrl.map(async (page,i) => {
-      const res = await axios.get(page);
-      const dom = new jsdom.JSDOM(res.data);
-      const document = dom.window.document;
-      const name = document
-        .querySelector(".com-hero-title")
-        .textContent.split("　公")[0]
-        .trim();
-      let blogLinks = document.querySelectorAll(".member-blog-listm .box a");
-      let blogTitles = document.querySelectorAll(
-        ".member-blog-listm .box .title"
-      );
-      let blogDates = document.querySelectorAll(
-        ".member-blog-listm .box .date"
-      );
-      blogLinks = [...blogLinks].map((item) => INDEX + item.href);
-      blogTitles = [...blogTitles].map((item) => item.textContent);
-      blogDates = [...blogDates].map((item) =>
-        item.textContent.split("/").join("-")
-      );
-      blogDates = dectectRepeat(blogDates);
-      await timeout(i * 5000);
-      console.log(`page - ${i}`)
-      let blogsLog = await Promise.all(
-        blogLinks.map(async (link, i) => {
-          const res = await axios.get(link);
+      for (let i = page; i <= endPage; ++i) {
+        pageUrl.push(
+          `https://sakurazaka46.com/s/s46/diary/blog/list?&page=${i}&cd=blog&ct=${MEMBER_NUM}`
+        );
+      }
+      let pageUrlLog = pageUrl.map((page, i) => {
+        return async () => {
+          //request 網頁抓取 name link titles dates
+          const res = await axios.get(page);
+          // console.log(res)
           const dom = new jsdom.JSDOM(res.data);
           const document = dom.window.document;
-          const pics = [];
-          const title = blogTitles[i];
-          const date = blogDates[i];
-          document
-            .querySelector(".box-article")
-            .querySelectorAll("img")
-            .forEach((url) => {
-              let separate = url.src.split("/");
-              const length = separate.length;
-              pics.push(INDEX + url.src);
-              url.src = separate[length - 1];
-            });
-          const content = document.querySelector(".box-article");
-          const path = `./${name}/${date}`;
-          fs.access(path, async (err) => {
-            if (!err) {
-              console.log("blog已下載過");
-            } else {
-              const folder = await mkdirp(path);
-              console.log(`建立資料夾成功`);
-              const article = await fs.writeFile(
-                `${path}/${title}.html`,
-                `<h1>${title}</h1>` + "<br><br><br>" + content.innerHTML,
-                function (err, result) {
-                  if (err) {
-                    fs.writeFile(
-                      `${path}/${date}.html`,
-                      `<h1>${title}</h1>` + "<br><br><br>" + content.innerHTML,
-                      function (err, result) {
-                        if (err) console.log("文章標題有問題");
-                        console.log("文章檔名更改並下載成功");
-                      }
-                    );
-                  }
-                  console.log("文章下載成功");
-                }
-              );
-              // download pics
-              let blogAllpic = await Promise.all(
-                pics.map(async (pic) => {
-                  reqNum += 1;
-                  let num = reqNum;
-                   await timeout(reqNum * 100);
-                  const downloadPics = await download(pic, path).then(() =>
-                    console.log("我看者你載照片 嘿嘿")
-                  );
-                  console.log(num);
+          const name = document
+            .querySelector(".com-hero-title")
+            .textContent.split("　公")[0]
+            .trim();
+          // await mkdirp(`./${name}`);
+          let blogLinks = document.querySelectorAll(
+            ".member-blog-listm .box a"
+          );
+          if (!blogLinks.length) {
+            console.log("無此頁面");
+            return;
+          }
+          let blogTitles = document.querySelectorAll(
+            ".member-blog-listm .box .title"
+          );
+          let blogDates = document.querySelectorAll(
+            ".member-blog-listm .box .date"
+          );
+          //內容處理
+          blogLinks = [...blogLinks].map((item) => INDEX + item.href);
+          blogTitles = [...blogTitles].map((item) => item.textContent);
+          blogDates = [...blogDates].map((item) =>
+            item.textContent.split("/").join("-")
+          );
+          blogDates = dectectRepeat(blogDates);
+          //同時下載各個blog
+
+          await Promise.all(
+            blogLinks.map(async (link, i) => {
+              //個別部落格資料處理
+              const res = await axios.get(link);
+              const dom = new jsdom.JSDOM(res.data);
+              const document = dom.window.document;
+              const pics = [];
+              const title = blogTitles[i];
+              const date = blogDates[i];
+              document
+                .querySelector(".box-article")
+                .querySelectorAll("img")
+                .forEach((url) => {
+                  let separate = url.src.split("/");
+                  const length = separate.length;
+                  pics.push(INDEX + url.src);
+                  url.src = separate[length - 1];
+                });
+              const content = document.querySelector(".box-article");
+              const path = `./${name}/${date}`;
+              //下載文章
+              await fs.promises
+                .access(path)
+                .then((err) => {
+                  // console.log("blog已下載過");
                 })
-              );
-            }
-          });
-        })
-      );
-    })
-  );
-});
+                .catch(async () => {
+                  //  folder = 
+                  await mkdirp(path);
+                  // article = 
+                  await fs.writeFile(
+                    `${path}/${title}.html`,
+                    `<h1>${title}</h1>` + "<br><br><br>" + content.innerHTML,
+                    function (err, result) {
+                      if (err) {
+                        fs.writeFile(
+                          `${path}/${date}.html`,
+                          `<h1>${title}</h1>` +
+                            "<br><br><br>" +
+                            content.innerHTML,
+                          function (err, result) {
+                            if (err) console.log("文章標題有問題");
+                            console.log("文章檔名更改並下載成功");
+                          }
+                        );
+                      }
+                    }
+                  );
+
+                  // download pics
+                  await Promise.all(
+                    pics.map(async (pic) => {
+                      const downloadPics = await download(pic, path);
+                    })
+                  );
+                  console.log(`${date} ${title} 下載完成`);
+                });
+            })
+          );
+          console.log(`page - ${i} 下載完成`);
+        };
+      });
+      // 照頁數下載;
+      const msg = await (async (arr) => {
+        for (let aj of arr) {
+          await aj();
+        }
+        return "OK";
+      })(pageUrlLog);
+      // console.log(msg);
+      console.log("=========================================");
+      console.log(`${profile[MEMBER_NUM]} download finished`);
+      console.log("=========================================");
+    };
+  });
+  await mergePromise(downloadList);
+  console.log("end");
+})();
